@@ -1,0 +1,116 @@
+.dollar-thermometer {
+  background: #0f172a;
+  border: 1px solid #1e293b;
+  border-radius: 18px;
+  color: #e2e8f0;
+  padding: 24px;
+  box-shadow: 0 20px 50px rgba(2, 6, 23, 0.35);
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+}
+
+.dt-header,
+.dt-metric-row,
+.dt-scale {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.dt-eyebrow {
+  color: #64748b;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.dt-header h2 {
+  margin: 4px 0 0;
+  font-size: 22px;
+}
+
+.dt-direction {
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 800;
+  padding: 8px 12px;
+}
+
+.dt-direction-up { background: rgba(16, 185, 129, 0.15); color: #34d399; }
+.dt-direction-down { background: rgba(244, 63, 94, 0.15); color: #fb7185; }
+.dt-direction-neutral { background: rgba(148, 163, 184, 0.15); color: #cbd5e1; }
+
+.dt-gauge { margin-top: 28px; }
+
+.dt-scale {
+  color: #64748b;
+  font-size: 10px;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+
+.dt-gauge-track {
+  height: 18px;
+  position: relative;
+}
+
+.dt-gauge-gradient {
+  background: linear-gradient(90deg, #f43f5e 0%, #f59e0b 50%, #10b981 100%);
+  border-radius: 999px;
+  height: 8px;
+  position: absolute;
+  top: 5px;
+  width: 100%;
+}
+
+.dt-needle {
+  background: #ffffff;
+  border: 2px solid #0f172a;
+  border-radius: 999px;
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.25);
+  height: 18px;
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  transition: left 300ms ease;
+  width: 8px;
+}
+
+.dt-score {
+  color: #cbd5e1;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  margin-top: 8px;
+  text-align: center;
+}
+
+.dt-metrics {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 28px;
+}
+
+.dt-metric-row {
+  color: #94a3b8;
+  font-size: 12px;
+  margin-bottom: 7px;
+}
+
+.dt-metric-row strong { color: #f8fafc; }
+
+.dt-track {
+  background: #1e293b;
+  border-radius: 999px;
+  height: 5px;
+  overflow: hidden;
+}
+
+.dt-fill {
+  background: #3b82f6;
+  height: 100%;
+  transition: width 300ms ease;
+}
+
+@media (max-width: 640px) {
+  .dt-metrics { grid-template-columns: 1fr; }
+}
