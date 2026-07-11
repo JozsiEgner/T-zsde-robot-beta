@@ -1,0 +1,6 @@
+name = "trading-api-proxy"
+main = "src/index.js"
+compatibility_date = "2026-07-11"
+
+[vars]
+ALLOWED_ORIGIN = "*"
