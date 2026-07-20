@@ -6,6 +6,7 @@ import numpy as np
 
 from broker import Broker
 from config import Config
+from dollar_proxy_thermometer import DollarProxyCache
 from risk import arbitrage_shield, position_size
 from strategy import generate_signal
 from xau_model import MarketState, XauFundamentals, assess_xau
@@ -39,10 +40,16 @@ def run():
     cfg = Config()
     broker = Broker(cfg)
     start_equity = cfg.starting_cash
+    dollar_proxy_cache = DollarProxyCache(ttl_seconds=cfg.dollar_proxy_ttl_seconds)
 
     logging.info(
-        "Robot indul | exchange=%s symbol=%s paper=%s sandbox=%s xau_model=%s",
-        cfg.exchange, cfg.symbol, cfg.paper_mode, cfg.sandbox_mode, cfg.enable_xau_model,
+        "Robot indul | exchange=%s symbol=%s paper=%s sandbox=%s xau_model=%s dollar_proxy=%s",
+        cfg.exchange,
+        cfg.symbol,
+        cfg.paper_mode,
+        cfg.sandbox_mode,
+        cfg.enable_xau_model,
+        cfg.enable_dollar_proxy,
     )
 
     while True:
@@ -96,12 +103,47 @@ def run():
                     assessment.label,
                 )
 
+            proxy_gate = "ALLOW"
+            proxy_multiplier = 1.0
+            if cfg.enable_dollar_proxy:
+                try:
+                    proxy = dollar_proxy_cache.get(
+                        timeout=cfg.dollar_proxy_timeout_seconds,
+                        stale_after_days=cfg.dollar_proxy_stale_days,
+                    )
+                    proxy_gate = proxy.gate
+                    proxy_multiplier = proxy.position_multiplier
+                    logging.info(
+                        "$Proxy Hőmérő | score=%.1f state=%s gate=%s stale=%s broad=%.3f(%s) real10y=%.3f(%s) vix=%.2f(%s)",
+                        proxy.score,
+                        proxy.state,
+                        proxy.gate,
+                        proxy.stale,
+                        proxy.broad_dollar.value,
+                        proxy.broad_dollar.date,
+                        proxy.real_yield_10y.value,
+                        proxy.real_yield_10y.date,
+                        proxy.vix.value,
+                        proxy.vix.date,
+                    )
+                except Exception as proxy_exc:
+                    logging.exception("$Proxy adatforrás hiba: %s", proxy_exc)
+                    if cfg.dollar_proxy_fail_closed:
+                        proxy_gate = "BLOCK"
+                        proxy_multiplier = 0.0
+
             pos = broker.position
             logging.info(
-                "ár=%.4f equity=%.2f jel=%s bizalom=%.2f buy=%.2f sell=%.2f pajzs=%s ok=%s",
-                price, equity, signal.action, signal.confidence,
-                signal.buy_score, signal.sell_score,
-                shield.reason, shield.allowed,
+                "ár=%.4f equity=%.2f jel=%s bizalom=%.2f buy=%.2f sell=%.2f pajzs=%s ok=%s proxy=%s",
+                price,
+                equity,
+                signal.action,
+                signal.confidence,
+                signal.buy_score,
+                signal.sell_score,
+                shield.reason,
+                shield.allowed,
+                proxy_gate,
             )
 
             if pos.amount > 0:
@@ -121,17 +163,25 @@ def run():
             elif (
                 shield.allowed
                 and xau_gate != "BLOCK"
+                and proxy_gate != "BLOCK"
                 and signal.action == "BUY"
                 and signal.confidence >= cfg.min_confidence
             ):
-                amount = position_size(cfg, broker.cash, price, signal.atr_value) * xau_multiplier
+                combined_multiplier = min(xau_multiplier, proxy_multiplier)
+                amount = position_size(cfg, broker.cash, price, signal.atr_value) * combined_multiplier
                 stop = price - signal.atr_value * cfg.stop_atr_multiplier
                 risk_per_unit = price - stop
                 take_profit = price + risk_per_unit * cfg.take_profit_r
                 broker.buy(amount, price, stop, take_profit)
                 logging.info(
-                    "BUY | amount=%.8f entry=%.4f stop=%.4f tp=%.4f gate=%s | %s",
-                    amount, price, stop, take_profit, xau_gate, signal.reason,
+                    "BUY | amount=%.8f entry=%.4f stop=%.4f tp=%.4f xau_gate=%s proxy_gate=%s | %s",
+                    amount,
+                    price,
+                    stop,
+                    take_profit,
+                    xau_gate,
+                    proxy_gate,
+                    signal.reason,
                 )
 
         except KeyboardInterrupt:
