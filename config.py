@@ -50,3 +50,9 @@ class Config:
     central_bank_flow: float = float(os.getenv("CENTRAL_BANK_FLOW", "0"))
     etf_flow: float = float(os.getenv("ETF_FLOW", "0"))
     physical_balance: float = float(os.getenv("PHYSICAL_BALANCE", "0"))
+
+    enable_dollar_proxy: bool = env_bool("ENABLE_DOLLAR_PROXY", True)
+    dollar_proxy_ttl_seconds: int = int(os.getenv("DOLLAR_PROXY_TTL_SECONDS", "3600"))
+    dollar_proxy_timeout_seconds: float = float(os.getenv("DOLLAR_PROXY_TIMEOUT_SECONDS", "10"))
+    dollar_proxy_stale_days: int = int(os.getenv("DOLLAR_PROXY_STALE_DAYS", "10"))
+    dollar_proxy_fail_closed: bool = env_bool("DOLLAR_PROXY_FAIL_CLOSED", True)
